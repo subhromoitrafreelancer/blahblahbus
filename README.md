@@ -1,6 +1,6 @@
-# Slack to Kafka Middleware
+# BlahBlahBus
 
-A Node.js middleware service that receives messages from Slack channels and forwards them to corresponding Kafka topics.
+A Node.js middleware service that receives messages from Slack/Pumble channels and forwards them to corresponding Kafka topics.
 
 ## Features
 
