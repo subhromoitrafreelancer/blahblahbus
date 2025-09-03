@@ -1,7 +1,7 @@
 import { Kafka, Producer, Message } from 'kafkajs';
 import { ConfigLoader } from '../config/configLoader';
 import { Logger } from './logger';
-import { KafkaMessage } from '../types';
+import {UnifiedMessage} from '../types';
 
 export class KafkaService {
   private kafka: Kafka;
@@ -11,7 +11,7 @@ export class KafkaService {
 
   constructor() {
     const config = ConfigLoader.getInstance().loadAppConfig();
-    
+
     this.kafka = new Kafka({
       clientId: config.kafka.clientId,
       brokers: config.kafka.brokers,
@@ -44,19 +44,19 @@ export class KafkaService {
     }
   }
 
-  async sendMessage(topic: string, message: KafkaMessage): Promise<void> {
+  async sendMessage(topic: string, message: UnifiedMessage): Promise<void> {
     if (!this.isConnected) {
       throw new Error('Kafka producer is not connected');
     }
 
     try {
       const kafkaMessage: Message = {
-        key: `${message.channel.id}-${message.message.ts}`,
+        key: `${message.channel.id}-${message.message.id}`,
         value: JSON.stringify(message),
         timestamp: message.timestamp,
         headers: {
           'content-type': 'application/json',
-          'source': 'slack-kafka-middleware'
+          'source': `${message.metadata.source}-kafka-middleware`
         }
       };
 
@@ -66,15 +66,17 @@ export class KafkaService {
       });
 
       this.logger.info(`Message sent to Kafka topic ${topic}`, {
+        source: message.metadata.source,
         channel: message.channel.name,
         user: message.user.id,
-        messageTs: message.message.ts
+        messageId: message.message.id
       });
     } catch (error) {
       this.logger.error(`Failed to send message to Kafka topic ${topic}:`, error);
       throw error;
     }
   }
+
 
   getConnectionStatus(): boolean {
     return this.isConnected;

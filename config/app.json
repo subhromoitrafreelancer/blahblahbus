@@ -19,6 +19,11 @@
     "appToken": "${SLACK_APP_TOKEN}",
     "socketMode": false
   },
+  "pumble": {
+    "webhookSecret": "${PUMBLE_WEBHOOK_SECRET}",
+    "apiToken": "${PUMBLE_API_TOKEN}",
+    "webhookPath": "/pumble/webhook"
+  },
   "logging": {
     "level": "info",
     "maxFiles": 5,
@@ -26,4 +31,3 @@
     "datePattern": "YYYY-MM-DD"
   }
 }
-

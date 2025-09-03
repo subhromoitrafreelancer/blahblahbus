@@ -5,17 +5,20 @@ import { ConfigLoader } from './config/configLoader';
 import { Logger } from './services/logger';
 import { KafkaService } from './services/kafkaservices';
 import { SlackService } from './services/slackService';
+import { PumbleService } from './services/pumbleService';
 
 export class Server {
   private app: express.Application;
   private kafkaService: KafkaService;
   private slackService: SlackService;
+  private pumbleService: PumbleService;
   private logger = Logger.getInstance();
 
   constructor() {
     this.app = express();
     this.kafkaService = new KafkaService();
     this.slackService = new SlackService(this.kafkaService);
+    this.pumbleService = new PumbleService(this.kafkaService);
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -36,30 +39,69 @@ export class Server {
         kafka: {
           connected: this.kafkaService.getConnectionStatus()
         },
+        services: {
+          slack: 'running',
+          pumble: 'running'
+        },
         uptime: process.uptime()
       };
 
       res.json(health);
     });
 
-    // Reload configuration endpoint
+    // Add Pumble webhook endpoint
+    this.app.post(this.pumbleService.getWebhookPath(), (req, res) => {
+      this.pumbleService.handleWebhook(req, res);
+    });
+
+    // Reload configuration endpoint - update to include Pumble
     this.app.post('/reload-config', (req, res) => {
       try {
         this.slackService.reloadMappings();
-        res.json({ message: 'Configuration reloaded successfully' });
+        this.pumbleService.reloadMappings(); // Add this
+        res.json({ message: 'Configuration reloaded successfully for both Slack and Pumble' });
       } catch (error) {
         this.logger.error('Failed to reload configuration:', error);
         res.status(500).json({ error: 'Failed to reload configuration' });
       }
     });
 
-    // Metrics endpoint
+    // Add service-specific reload endpoints
+    this.app.post('/reload-config/slack', (req, res) => {
+      try {
+        this.slackService.reloadMappings();
+        res.json({ message: 'Slack configuration reloaded successfully' });
+      } catch (error) {
+        this.logger.error('Failed to reload Slack configuration:', error);
+        res.status(500).json({ error: 'Failed to reload Slack configuration' });
+      }
+    });
+
+    this.app.post('/reload-config/pumble', (req, res) => {
+      try {
+        this.pumbleService.reloadMappings();
+        res.json({ message: 'Pumble configuration reloaded successfully' });
+      } catch (error) {
+        this.logger.error('Failed to reload Pumble configuration:', error);
+        res.status(500).json({ error: 'Failed to reload Pumble configuration' });
+      }
+    });
+
+    // Metrics endpoint - update to include both services
     this.app.get('/metrics', (req, res) => {
       const metrics = {
         uptime: process.uptime(),
         memory: process.memoryUsage(),
         kafka: {
           connected: this.kafkaService.getConnectionStatus()
+        },
+        services: {
+          slack: 'running',
+          pumble: 'running'
+        },
+        endpoints: {
+          slack_events: '/slack/events',
+          pumble_webhook: this.pumbleService.getWebhookPath()
         },
         timestamp: new Date().toISOString()
       };

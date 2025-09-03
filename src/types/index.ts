@@ -19,6 +19,12 @@ export interface AppConfig {
     appToken: string;
     socketMode: boolean;
   };
+  // Add Pumble configuration
+  pumble: {
+    webhookSecret: string;
+    apiToken?: string;
+    webhookPath: string;
+  };
   logging: {
     level: string;
     maxFiles: number;
@@ -26,6 +32,32 @@ export interface AppConfig {
     datePattern: string;
   };
 }
+
+// Add new unified message format
+export interface UnifiedMessage {
+  timestamp: string;
+  channel: {
+    id: string;
+    name: string;
+  };
+  user: {
+    id: string;
+    name?: string;
+  };
+  message: {
+    text: string;
+    id: string;
+    thread_id?: string;
+    message_type?: string;
+    subtype?: string;
+  };
+  metadata: {
+    workspace_id: string;
+    bot_id?: string;
+    source: 'slack' | 'pumble';
+  };
+}
+
 
 export interface ChannelMapping {
   channelId: string;

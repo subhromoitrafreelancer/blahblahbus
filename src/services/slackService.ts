@@ -2,7 +2,7 @@ import { App } from '@slack/bolt';
 import { ConfigLoader } from '../config/configLoader';
 import { Logger } from './logger';
 import { KafkaService } from './kafkaservices';
-import { SlackMessage, KafkaMessage, ChannelMapping } from '../types';
+import {SlackMessage, KafkaMessage, ChannelMapping, UnifiedMessage} from '../types';
 
 export class SlackService {
   private app: App;
@@ -82,8 +82,8 @@ export class SlackService {
         }
       }
 
-      // Transform to Kafka message format
-      const kafkaMessage: KafkaMessage = {
+      // Transform to unified message format
+      const unifiedMessage: UnifiedMessage = {
         timestamp: new Date(parseFloat(event.ts) * 1000).toISOString(),
         channel: {
           id: event.channel,
@@ -95,19 +95,19 @@ export class SlackService {
         },
         message: {
           text: event.text,
-          ts: event.ts,
-          thread_ts: event.thread_ts,
+          id: event.ts, // Using ts as message ID for Slack
+          thread_id: event.thread_ts,
           subtype: event.subtype
         },
         metadata: {
-          team: event.team,
+          workspace_id: event.team,
           bot_id: event.bot_id,
           source: 'slack'
         }
       };
 
       // Send to Kafka
-      await this.kafkaService.sendMessage(mapping.kafkaTopic, kafkaMessage);
+      await this.kafkaService.sendMessage(mapping.kafkaTopic, unifiedMessage);
 
     } catch (error) {
       this.logger.error(`Failed to process message from channel ${mapping.channelName}:`, error);

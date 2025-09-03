@@ -1,0 +1,24 @@
+{
+  "mappings": [
+    {
+      "channelId": "P1234567890",
+      "channelName": "general",
+      "kafkaTopic": "pumble-general",
+      "enabled": true,
+      "filters": {
+        "excludeBots": true,
+        "excludeMessageTypes": ["channel_join", "channel_leave", "system"]
+      }
+    },
+    {
+      "channelId": "P0987654321",
+      "channelName": "alerts",
+      "kafkaTopic": "pumble-alerts",
+      "enabled": true,
+      "filters": {
+        "excludeBots": false,
+        "excludeMessageTypes": []
+      }
+    }
+  ]
+}

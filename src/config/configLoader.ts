@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as Joi from 'joi';
 import { AppConfig, ChannelMappingConfig } from '../types';
+import { PumbleChannelMappingConfig } from '../types/pumble';
 
 const appConfigSchema = Joi.object({
   server: Joi.object({
@@ -24,6 +25,12 @@ const appConfigSchema = Joi.object({
     appToken: Joi.string().required(),
     socketMode: Joi.boolean().required()
   }).required(),
+  // Add Pumble validation
+  pumble: Joi.object({
+    webhookSecret: Joi.string().required(),
+    apiToken: Joi.string().optional().allow(''),
+    webhookPath: Joi.string().required()
+  }).required(),
   logging: Joi.object({
     level: Joi.string().valid('error', 'warn', 'info', 'debug').required(),
     maxFiles: Joi.number().positive().required(),
@@ -31,6 +38,23 @@ const appConfigSchema = Joi.object({
     datePattern: Joi.string().required()
   }).required()
 });
+
+// Add Pumble channel mapping schema
+const pumbleChannelMappingSchema = Joi.object({
+  mappings: Joi.array().items(
+    Joi.object({
+      channelId: Joi.string().required(),
+      channelName: Joi.string().required(),
+      kafkaTopic: Joi.string().required(),
+      enabled: Joi.boolean().required(),
+      filters: Joi.object({
+        excludeBots: Joi.boolean().required(),
+        excludeMessageTypes: Joi.array().items(Joi.string()).required()
+      }).required()
+    })
+  ).required()
+});
+
 
 const channelMappingSchema = Joi.object({
   mappings: Joi.array().items(
@@ -51,6 +75,8 @@ export class ConfigLoader {
   private static instance: ConfigLoader;
   private appConfig: AppConfig | null = null;
   private channelMappingConfig: ChannelMappingConfig | null = null;
+  private pumbleChannelMappingConfig: PumbleChannelMappingConfig | null = null; // Add this
+
 
   private constructor() {}
 
@@ -59,6 +85,32 @@ export class ConfigLoader {
       ConfigLoader.instance = new ConfigLoader();
     }
     return ConfigLoader.instance;
+  }
+
+
+  // Add this method to existing ConfigLoader class
+  loadPumbleChannelMapping(): PumbleChannelMappingConfig {
+    if (this.pumbleChannelMappingConfig) return this.pumbleChannelMappingConfig;
+
+    const mappingPath = path.join(process.cwd(), 'config', 'pumble-channel-mapping.json');
+
+    if (!fs.existsSync(mappingPath)) {
+      throw new Error(`Pumble channel mapping file not found: ${mappingPath}`);
+    }
+
+    try {
+      const mappingData = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+
+      const { error, value } = pumbleChannelMappingSchema.validate(mappingData);
+      if (error) {
+        throw new Error(`Invalid Pumble channel mapping configuration: ${error.message}`);
+      }
+
+      this.pumbleChannelMappingConfig = value as PumbleChannelMappingConfig;
+      return this.pumbleChannelMappingConfig;
+    } catch (error) {
+      throw new Error(`Failed to load Pumble channel mapping: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private substituteEnvVars(obj: any): any {
@@ -137,5 +189,6 @@ export class ConfigLoader {
   reloadConfigs(): void {
     this.appConfig = null;
     this.channelMappingConfig = null;
+    this.pumbleChannelMappingConfig = null;
   }
 }
