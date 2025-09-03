@@ -1,0 +1,29 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  },
+  "kafka": {
+    "brokers": ["localhost:9092"],
+    "clientId": "slack-kafka-middleware",
+    "connectionTimeout": 3000,
+    "requestTimeout": 30000,
+    "retry": {
+      "retries": 5,
+      "initialRetryTime": 100
+    }
+  },
+  "slack": {
+    "signingSecret": "${SLACK_SIGNING_SECRET}",
+    "botToken": "${SLACK_BOT_TOKEN}",
+    "appToken": "${SLACK_APP_TOKEN}",
+    "socketMode": false
+  },
+  "logging": {
+    "level": "info",
+    "maxFiles": 5,
+    "maxSize": "10m",
+    "datePattern": "YYYY-MM-DD"
+  }
+}
+

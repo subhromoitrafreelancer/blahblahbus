@@ -1,0 +1,25 @@
+{
+  "mappings": [
+    {
+      "channelId": "C1234567890",
+      "channelName": "general",
+      "kafkaTopic": "slack-general",
+      "enabled": true,
+      "filters": {
+        "excludeBots": true,
+        "excludeSubtypes": ["channel_join", "channel_leave"]
+      }
+    },
+    {
+      "channelId": "C0987654321",
+      "channelName": "alerts",
+      "kafkaTopic": "slack-alerts",
+      "enabled": true,
+      "filters": {
+        "excludeBots": false,
+        "excludeSubtypes": []
+      }
+    }
+  ]
+}
+
